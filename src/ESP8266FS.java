@@ -1,7 +1,7 @@
 /* -*- mode: java; c-basic-offset: 2; indent-tabs-mode: nil -*- */
 
 /*
-  Tool to put the contents of the sketch's "data" subfolder
+  Tool to put the contents of the sketch's "SPIFFS files" subfolder
   into an SPIFFS partition image and upload it to an ESP8266 MCU
 
   Copyright (c) 2015 Hristo Gochkov (ficeto at ficeto dot com)
@@ -62,7 +62,7 @@ public class ESP8266FS implements Tool {
 
 
   public String getMenuTitle() {
-    return "ESP8266 Sketch Data Upload";
+    return "ESP8266 upload SPIFFS files";
   }
 
   private int listenOnProcess(String[] arguments){
@@ -76,7 +76,7 @@ public class ESP8266FS implements Tool {
               while ((c = reader.read()) != -1)
                   System.out.print((char) c);
               reader.close();
-              
+
               reader = new InputStreamReader(p.getErrorStream());
               while ((c = reader.read()) != -1)
                   System.err.print((char) c);
@@ -183,7 +183,7 @@ public class ESP8266FS implements Tool {
     }
 
     TargetPlatform platform = BaseNoGui.getTargetPlatform();
-    
+
     //Make sure mkspiffs binary exists
     String mkspiffsCmd;
     if(PreferencesData.get("runtime.os").contentEquals("windows"))
@@ -203,12 +203,12 @@ public class ESP8266FS implements Tool {
         }
       }
     }
-    
+
     Boolean isNetwork = false;
     File espota = new File(platform.getFolder()+"/tools");
     File esptool = new File(platform.getFolder()+"/tools");
     String serialPort = PreferencesData.get("serial.port");
-    
+
     //make sure the serial port or IP is defined
     if (serialPort == null || serialPort.isEmpty()) {
       System.err.println();
@@ -241,10 +241,11 @@ public class ESP8266FS implements Tool {
         }
       }
     }
-    
+
     //load a list of all files
     int fileCount = 0;
-    File dataFolder = new File(editor.getSketch().getFolder(), "data");
+    String SPIFFS_FOLDER_NAME = "SPIFFS files";
+    File dataFolder = new File(editor.getSketch().getFolder(), SPIFFS_FOLDER_NAME);
     if (!dataFolder.exists()) {
         dataFolder.mkdirs();
     }
@@ -265,11 +266,11 @@ public class ESP8266FS implements Tool {
     String uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
     String uploadAddress = BaseNoGui.getBoardPreferences().get("build.spiffs_start");
 
-    
+
 
     Object[] options = { "Yes", "No" };
     String title = "SPIFFS Create";
-    String message = "No files have been found in your data folder!\nAre you sure you want to create an empty SPIFFS image?";
+    String message = "No files have been found in your '" + SPIFFS_FOLDER_NAME + "' folder!\nAre you sure you want to create an empty SPIFFS image?";
 
     if(fileCount == 0 && JOptionPane.showOptionDialog(editor, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[1]) != JOptionPane.YES_OPTION){
       System.err.println();
@@ -297,14 +298,14 @@ public class ESP8266FS implements Tool {
 
     editor.statusNotice("SPIFFS Uploading Image...");
     System.out.println("[SPIFFS] upload : "+imagePath);
-    
+
     if(isNetwork){
       String pythonCmd;
       if(PreferencesData.get("runtime.os").contentEquals("windows"))
           pythonCmd = "python.exe";
       else
           pythonCmd = "python";
-      
+
       System.out.println("[SPIFFS] IP     : "+serialPort);
       System.out.println();
       sysExec(new String[]{pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-s", "-f", imagePath});
